@@ -9,7 +9,7 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0; /* Убраны отступы тела документа */
             /* Стили автоматически подстраиваются под тему Telegram */
             color: var(--tg-theme-text-color);
             background-color: var(--tg-theme-bg-color);
@@ -18,11 +18,18 @@
             align-items: center;
         }
         img {
-            width: 100%;
-            max-width: 400px;
-            height: auto;
-            margin-bottom: 20px;
-            border-radius: 10px;
+            width: 100%; /* Изображение занимает всю ширину родительского контейнера */
+            /* max-width: 400px; Это ограничение можно убрать, если нужно растягивать на всю ширину */
+            max-width: none; /* Убираем ограничение максимальной ширины */
+            height: auto; /* Сохраняем пропорции */
+            margin-bottom: 0px; /* Убран отступ снизу */
+            border-radius: 10px; /* Скругление углов */
+            display: block; /* Убирает возможные нежелательные отступы под изображением */
+        }
+        #imageContainer {
+            width: 100%; /* Контейнер для изображений занимает всю ширину */
+            padding: 20px; /* Добавляем отступы внутри контейнера, если нужно */
+            box-sizing: border-box; /* Учитываем padding в ширине */
         }
     </style>
 </head>
