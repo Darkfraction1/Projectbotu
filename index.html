@@ -8,27 +8,69 @@
         body {
             margin: 0;
             padding: 0;
-            /* Стили автоматически подстраиваются под тему Telegram */
             color: var(--tg-theme-text-color);
             background-color: var(--tg-theme-bg-color);
             display: flex;
             flex-direction: column;
             align-items: center;
+            height: 100vh; /* Занимаем всю высоту окна */
+            overflow: hidden; /* Отключаем прокрутку всего тела */
         }
+        
+        #imageContainer {
+            width: 100%;
+            flex-grow: 1; /* Контейнер занимает все доступное пространство */
+            overflow-y: auto; /* Добавляем вертикальную прокрутку при необходимости :cite[7]:cite[9] */
+            
+            /* Стилизация полосы прокрутки для WebKit-браузеров (Chrome, Safari, Edge) */
+            scrollbar-width: thin; /* Для Firefox - тонкая полоса :cite[5] */
+            scrollbar-color: #888 var(--tg-theme-bg-color); /* Для Firefox :cite[5] */
+        }
+
+        /* Стилизация полосы прокрутки для WebKit-браузеров */
+        #imageContainer::-webkit-scrollbar {
+            width: 8px; /* Ширина полосы прокрутки :cite[2] */
+        }
+
+        #imageContainer::-webkit-scrollbar-track {
+            background: var(--tg-theme-bg-color); /* Цвет дорожки :cite[2] */
+        }
+
+        #imageContainer::-webkit-scrollbar-thumb {
+            background-color: #888; /* Цвет бегунка :cite[2] */
+            border-radius: 4px; /* Закругление углов :cite[2] */
+        }
+
+        #imageContainer::-webkit-scrollbar-thumb:hover {
+            background-color: #555; /* Цвет бегунка при наведении */
+        }
+
         img {
             width: 100%;
             max-width: 100%;
             height: auto;
+            display: block; /* Убирает промежуток между картинками :cite[1]:cite[6] */
+            margin: 0; /* Убирает возможные внешние отступы */
+            padding: 0; /* Убирает возможные внутренние отступы */
+        }
+
+        #counter {
+            padding: 10px 0;
+            text-align: center;
+            width: 100%;
+            border-top: 1px solid var(--tg-theme-text-color);
+            background-color: var(--tg-theme-bg-color);
         }
     </style>
 </head>
 <body>
     <h1>Ваша галерея</h1>
     <div id="imageContainer"></div>
+    <div id="counter">0 / 0</div>
 
     <script>
         let tg = window.Telegram.WebApp;
-        tg.expand(); // Раскрываем приложение на весь экран
+        tg.expand();
 
         // Функция для получения параметров из URL
         function getUrlParams() {
@@ -40,16 +82,53 @@
         // Загружаем и отображаем картинки
         const imageLinks = getUrlParams();
         const container = document.getElementById('imageContainer');
+        const counterElement = document.getElementById('counter');
+        let currentImageIndex = 0;
 
         if (imageLinks.length > 0) {
-            imageLinks.forEach(link => {
+            imageLinks.forEach((link, index) => {
                 const imgElement = document.createElement('img');
                 imgElement.src = link;
-                imgElement.alt = 'Image from Dropbox';
+                imgElement.alt = `Image ${index + 1} from Dropbox`;
                 container.appendChild(imgElement);
             });
+            
+            // Обновляем счетчик
+            updateCounter();
+            
+            // Добавляем обработчик прокрутки
+            container.addEventListener('scroll', updateCurrentImageIndex);
         } else {
             container.innerHTML = '<p>Изображения не найдены.</p>';
+            counterElement.textContent = '0 / 0';
+        }
+
+        function updateCurrentImageIndex() {
+            const images = container.getElementsByTagName('img');
+            const containerRect = container.getBoundingClientRect();
+            const containerCenter = containerRect.top + containerRect.height / 2;
+            
+            let closestIndex = 0;
+            let minDistance = Number.MAX_VALUE;
+            
+            // Находим изображение, ближайшее к центру контейнера
+            for (let i = 0; i < images.length; i++) {
+                const imgRect = images[i].getBoundingClientRect();
+                const imgCenter = imgRect.top + imgRect.height / 2;
+                const distance = Math.abs(imgCenter - containerCenter);
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestIndex = i;
+                }
+            }
+            
+            currentImageIndex = closestIndex;
+            updateCounter();
+        }
+
+        function updateCounter() {
+            counterElement.textContent = `${currentImageIndex + 1} / ${imageLinks.length}`;
         }
     </script>
 </body>
