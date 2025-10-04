@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Галерея изображений</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            /* Стили автоматически подстраиваются под тему Telegram */
+            color: var(--tg-theme-text-color);
+            background-color: var(--tg-theme-bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        img {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ваша галерея</h1>
+    <div id="imageContainer"></div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand(); // Раскрываем приложение на весь экран
+
+        // Функция для получения параметров из URL
+        function getUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const imagesParam = urlParams.get('images');
+            return imagesParam ? JSON.parse(imagesParam) : [];
+        }
+
+        // Загружаем и отображаем картинки
+        const imageLinks = getUrlParams();
+        const container = document.getElementById('imageContainer');
+
+        if (imageLinks.length > 0) {
+            imageLinks.forEach(link => {
+                const imgElement = document.createElement('img');
+                imgElement.src = link;
+                imgElement.alt = 'Image from Dropbox';
+                container.appendChild(imgElement);
+            });
+        } else {
+            container.innerHTML = '<p>Изображения не найдены.</p>';
+        }
+    </script>
+</body>
+</html>
