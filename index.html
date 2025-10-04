@@ -106,12 +106,12 @@
         });
         
         // Запрет контекстного меню для мобильных устройств (долгое нажатие)
-        document.addEventListener('touchstart', function(e) {
+     //   document.addEventListener('touchstart', function(e) {
             // Предотвращаем стандартное поведение для всех элементов кроме счетчика
-            if (e.target.id !== 'counter') {
-                e.preventDefault();
-            }
-        }, { passive: false });
+       //     if (e.target.id !== 'counter') {
+         //       e.preventDefault();
+           // }
+        //}, { passive: false });
         
         document.addEventListener('touchend', function(e) {
             // Предотвращаем вызов контекстного меню при долгом тапе
@@ -273,3 +273,4 @@
     </script>
 </body>
 </html>
+
