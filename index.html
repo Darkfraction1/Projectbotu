@@ -113,12 +113,12 @@
            // }
         //}, { passive: false });
         
-        document.addEventListener('touchend', function(e) {
+      //  document.addEventListener('touchend', function(e) {
             // Предотвращаем вызов контекстного меню при долгом тапе
-            if (e.target.id !== 'counter') {
-                e.preventDefault();
-            }
-        });
+        //    if (e.target.id !== 'counter') {
+          //      e.preventDefault();
+            //}
+        //});
         
         // Запрет перетаскивания
         document.addEventListener('dragstart', function(e) {
@@ -273,4 +273,5 @@
     </script>
 </body>
 </html>
+
 
