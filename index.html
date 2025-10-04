@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
             margin: 0;
             padding: 0;
@@ -18,30 +22,42 @@
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
         
         #imageContainer {
             width: 100%;
             flex-grow: 1;
             overflow-y: auto;
-            /* Для Firefox */
-            scrollbar-width: thin;
-            scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+            position: relative;
+            /* Полностью скрываем стандартную полосу прокрутки */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE и Edge */
         }
 
-        /* Стилизация полосы прокрутки для WebKit */
+        /* Скрываем стандартную полосу прокрутки в WebKit браузерах */
         #imageContainer::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Кастомный скроллбар */
+        #customScrollbar {
+            position: fixed;
+            top: 0;
+            right: 2px;
             width: 6px;
-        }
-        #imageContainer::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        #imageContainer::-webkit-scrollbar-thumb {
-            background-color: rgba(0, 0, 0, 0.3);
-            border-radius: 3px;
-        }
-        #imageContainer::-webkit-scrollbar-thumb:hover {
+            height: 100px;
             background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 3px;
+            z-index: 1001;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #customScrollbar.visible {
+            opacity: 1;
         }
 
         img {
@@ -52,7 +68,11 @@
             margin: 0;
             padding: 0;
             -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
             user-drag: none;
+            -webkit-touch-callout: none;
         }
 
         #counter {
@@ -72,18 +92,34 @@
 </head>
 <body>
     <div id="imageContainer"></div>
+    <div id="customScrollbar"></div>
     <div id="counter">0 / 0</div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Запрет правого клика (контекстного меню)
+        // Запрет контекстного меню для всех устройств
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
             return false;
         });
-
+        
+        // Запрет контекстного меню для мобильных устройств (долгое нажатие)
+        document.addEventListener('touchstart', function(e) {
+            // Предотвращаем стандартное поведение для всех элементов кроме счетчика
+            if (e.target.id !== 'counter') {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        document.addEventListener('touchend', function(e) {
+            // Предотвращаем вызов контекстного меню при долгом тапе
+            if (e.target.id !== 'counter') {
+                e.preventDefault();
+            }
+        });
+        
         // Запрет перетаскивания
         document.addEventListener('dragstart', function(e) {
             e.preventDefault();
@@ -97,26 +133,115 @@
             return imagesParam ? JSON.parse(imagesParam) : [];
         }
 
-        // Загружаем и отображаем картинки
-        const imageLinks = getUrlParams();
+        // Элементы DOM
         const container = document.getElementById('imageContainer');
+        const customScrollbar = document.getElementById('customScrollbar');
         const counterElement = document.getElementById('counter');
+        
+        // Переменные
+        const imageLinks = getUrlParams();
         let currentImageIndex = 0;
+        let scrollTimeout;
+        let isScrolling = false;
 
+        // Инициализация галереи
         if (imageLinks.length > 0) {
+            // Загружаем изображения и ждем их загрузки
+            let loadedImages = 0;
+            
             imageLinks.forEach((link, index) => {
-                const imgElement = document.createElement('img');
+                const imgElement = new Image();
                 imgElement.src = link;
                 imgElement.alt = `Image ${index + 1} from Dropbox`;
                 imgElement.setAttribute('draggable', 'false');
+                
+                imgElement.onload = function() {
+                    loadedImages++;
+                    if (loadedImages === imageLinks.length) {
+                        // Все изображения загружены
+                        initScrollbar();
+                    }
+                };
+                
+                imgElement.onerror = function() {
+                    loadedImages++;
+                    if (loadedImages === imageLinks.length) {
+                        // Все изображения загружены (или некоторые с ошибкой)
+                        initScrollbar();
+                    }
+                };
+                
                 container.appendChild(imgElement);
             });
             
             updateCounter();
-            container.addEventListener('scroll', updateCurrentImageIndex);
         } else {
             container.innerHTML = '<p>Изображения не найдены.</p>';
             counterElement.textContent = '0 / 0';
+        }
+
+        // Инициализация скроллбара после загрузки изображений
+        function initScrollbar() {
+            updateCustomScrollbar();
+            
+            // Обработчики событий
+            container.addEventListener('scroll', function() {
+                if (!isScrolling) {
+                    customScrollbar.classList.add('visible');
+                    isScrolling = true;
+                }
+                
+                updateCurrentImageIndex();
+                updateCustomScrollbar();
+                
+                // Скрываем скроллбар через 1 секунду после остановки прокрутки
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    customScrollbar.classList.remove('visible');
+                    isScrolling = false;
+                }, 1000);
+            });
+            
+            // Также обновляем при изменении размера окна
+            window.addEventListener('resize', updateCustomScrollbar);
+            
+            // Принудительно показываем скроллбар на 2 секунды при загрузке, если есть прокрутка
+            if (container.scrollHeight > container.clientHeight) {
+                customScrollbar.classList.add('visible');
+                setTimeout(() => {
+                    if (!isScrolling) {
+                        customScrollbar.classList.remove('visible');
+                    }
+                }, 2000);
+            }
+        }
+
+        // Обновление позиции и размера кастомного скроллбара
+        function updateCustomScrollbar() {
+            const scrollTop = container.scrollTop;
+            const scrollHeight = container.scrollHeight;
+            const clientHeight = container.clientHeight;
+            
+            // Проверяем, нужна ли вообще полоса прокрутки
+            if (scrollHeight <= clientHeight) {
+                customScrollbar.style.display = 'none';
+                return;
+            }
+            
+            customScrollbar.style.display = 'block';
+            
+            // Вычисляем размер и позицию скроллбара
+            const scrollableHeight = scrollHeight - clientHeight;
+            const scrollPercent = scrollTop / scrollableHeight;
+            
+            // Высота скроллбара пропорциональна видимой области
+            const scrollbarHeight = Math.max((clientHeight / scrollHeight) * clientHeight, 40);
+            
+            // Позиция скроллбара
+            const scrollbarTop = scrollPercent * (clientHeight - scrollbarHeight);
+            
+            customScrollbar.style.height = scrollbarHeight + 'px';
+            customScrollbar.style.top = scrollbarTop + 'px';
         }
 
         function updateCurrentImageIndex() {
