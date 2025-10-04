@@ -39,7 +39,6 @@
         /* Скрываем стандартную полосу прокрутки в WebKit браузерах */
         #imageContainer::-webkit-scrollbar {
             display: none;
-            touch-action: pan-y; /* Разрешает вертикальную прокрутку касанием */
         }
 
         /* Кастомный скроллбар */
@@ -100,26 +99,36 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Запрет контекстного меню для всех устройств
+                // Запрет контекстного меню для всех устройств
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
             return false;
         });
         
         // Запрет контекстного меню для мобильных устройств (долгое нажатие)
+        let touchTimer;
+        let isScrolling = false;
+
         document.addEventListener('touchstart', function(e) {
-            // Предотвращаем стандартное поведение для всех элементов кроме счетчика
-            if (e.target.id !== 'counter') {
+            // Запускаем таймер для определения долгого нажатия
+            touchTimer = setTimeout(function() {
+                // Если таймер сработал - это долгое нажатие, предотвращаем его
                 e.preventDefault();
-            }
-        }, { passive: false });
-        
+            }, 500); // 500ms - стандартное время для вызова контекстного меню
+            
+            isScrolling = false;
+        }, { passive: true }); // Используем passive: true для улучшения производительности прокрутки
+
+        document.addEventListener('touchmove', function(e) {
+            // Если пользователь начал двигать пальцем - это прокрутка, отменяем таймер долгого нажатия
+            clearTimeout(touchTimer);
+            isScrolling = true;
+        }, { passive: true });
+
         document.addEventListener('touchend', function(e) {
-            // Предотвращаем вызов контекстного меню при долгом тапе
-            if (e.target.id !== 'counter') {
-                e.preventDefault();
-            }
-        });
+            // Отменяем таймер при окончании касания
+            clearTimeout(touchTimer);
+        }, { passive: true });
         
         // Запрет перетаскивания
         document.addEventListener('dragstart', function(e) {
@@ -274,4 +283,5 @@
     </script>
 </body>
 </html>
+
 
