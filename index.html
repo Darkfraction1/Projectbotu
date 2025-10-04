@@ -73,7 +73,6 @@
             -o-user-drag: none;
             user-drag: none;
             -webkit-touch-callout: none;
-            pointer-events: none;
         }
 
         #counter {
@@ -132,7 +131,6 @@ let isScrolling = false;
 
 // Инициализация галереи
 if (imageLinks.length > 0) {
-    // Загружаем изображения и ждем их загрузки
     let loadedImages = 0;
 
     imageLinks.forEach((link, index) => {
@@ -144,13 +142,13 @@ if (imageLinks.length > 0) {
         // Добавляем обработчик contextmenu к каждому изображению
         imgElement.addEventListener('contextmenu', function(event) {
             event.preventDefault();
+            event.stopPropagation(); // <-- Обязательно добавьте
             return false;
         }, { passive: false });
 
         imgElement.onload = function() {
             loadedImages++;
             if (loadedImages === imageLinks.length) {
-                // Все изображения загружены
                 initScrollbar();
             }
         };
@@ -158,7 +156,6 @@ if (imageLinks.length > 0) {
         imgElement.onerror = function() {
             loadedImages++;
             if (loadedImages === imageLinks.length) {
-                // Все изображения загружены (или некоторые с ошибкой)
                 initScrollbar();
             }
         };
@@ -265,6 +262,7 @@ function updateCounter() {
     </script>
 </body>
 </html>
+
 
 
 
