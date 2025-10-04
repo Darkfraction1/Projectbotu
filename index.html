@@ -39,6 +39,7 @@
         /* Скрываем стандартную полосу прокрутки в WebKit браузерах */
         #imageContainer::-webkit-scrollbar {
             display: none;
+            touch-action: pan-y; /* Разрешает вертикальную прокрутку касанием */
         }
 
         /* Кастомный скроллбар */
@@ -273,3 +274,4 @@
     </script>
 </body>
 </html>
+
