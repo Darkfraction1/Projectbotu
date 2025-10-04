@@ -12,59 +12,48 @@
             background-color: var(--tg-theme-bg-color);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            height: 100vh; /* Занимаем всю высоту окна */
-            overflow: hidden; /* Отключаем прокрутку всего тела */
+            height: 100vh;
+            overflow: hidden;
         }
         
         #imageContainer {
             width: 100%;
-            flex-grow: 1; /* Контейнер занимает все доступное пространство */
-            overflow-y: auto; /* Добавляем вертикальную прокрутку при необходимости :cite[7]:cite[9] */
-            
-            /* Стилизация полосы прокрутки для WebKit-браузеров (Chrome, Safari, Edge) */
-            scrollbar-width: thin; /* Для Firefox - тонкая полоса :cite[5] */
-            scrollbar-color: #888 var(--tg-theme-bg-color); /* Для Firefox :cite[5] */
+            flex-grow: 1;
+            overflow-y: auto;
+            scrollbar-width: none; /* Скрываем полосу прокрутки в Firefox */
+            -ms-overflow-style: none; /* Скрываем полосу прокрутки в IE и Edge */
         }
 
-        /* Стилизация полосы прокрутки для WebKit-браузеров */
+        /* Скрываем полосу прокрутки в WebKit-браузерах */
         #imageContainer::-webkit-scrollbar {
-            width: 8px; /* Ширина полосы прокрутки :cite[2] */
-        }
-
-        #imageContainer::-webkit-scrollbar-track {
-            background: var(--tg-theme-bg-color); /* Цвет дорожки :cite[2] */
-        }
-
-        #imageContainer::-webkit-scrollbar-thumb {
-            background-color: #888; /* Цвет бегунка :cite[2] */
-            border-radius: 4px; /* Закругление углов :cite[2] */
-        }
-
-        #imageContainer::-webkit-scrollbar-thumb:hover {
-            background-color: #555; /* Цвет бегунка при наведении */
+            display: none;
         }
 
         img {
             width: 100%;
             max-width: 100%;
             height: auto;
-            display: block; /* Убирает промежуток между картинками :cite[1]:cite[6] */
-            margin: 0; /* Убирает возможные внешние отступы */
-            padding: 0; /* Убирает возможные внутренние отступы */
+            display: block;
+            margin: 0;
+            padding: 0;
         }
 
         #counter {
-            padding: 10px 0;
-            text-align: center;
-            width: 100%;
-            border-top: 1px solid var(--tg-theme-text-color);
-            background-color: var(--tg-theme-bg-color);
+            position: fixed;
+            bottom: 20px; /* Отступ снизу */
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 16px;
+            background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный черный фон */
+            color: white;
+            border-radius: 20px; /* Закругленные края */
+            font-size: 14px;
+            z-index: 1000;
+            backdrop-filter: blur(5px); /* Эффект размытия фона */
         }
     </style>
 </head>
 <body>
-    <h1>Ваша галерея</h1>
     <div id="imageContainer"></div>
     <div id="counter">0 / 0</div>
 
