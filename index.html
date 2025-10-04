@@ -96,182 +96,174 @@
     <div id="counter">0 / 0</div>
 
     <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
+       let tg = window.Telegram.WebApp;
+tg.expand();
 
-        // Запрет контекстного меню для всех устройств
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
+// Запрет контекстного меню для всех элементов документа
+document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    return false;
+}, { passive: false });
+
+// Запрет перетаскивания
+document.addEventListener('dragstart', function(e) {
+    e.preventDefault();
+    return false;
+});
+
+// Функция для получения параметров из URL
+function getUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const imagesParam = urlParams.get('images');
+    return imagesParam ? JSON.parse(imagesParam) : [];
+}
+
+// Элементы DOM
+const container = document.getElementById('imageContainer');
+const customScrollbar = document.getElementById('customScrollbar');
+const counterElement = document.getElementById('counter');
+
+// Переменные
+const imageLinks = getUrlParams();
+let currentImageIndex = 0;
+let scrollTimeout;
+let isScrolling = false;
+
+// Инициализация галереи
+if (imageLinks.length > 0) {
+    // Загружаем изображения и ждем их загрузки
+    let loadedImages = 0;
+
+    imageLinks.forEach((link, index) => {
+        const imgElement = new Image();
+        imgElement.src = link;
+        imgElement.alt = `Image ${index + 1} from Dropbox`;
+        imgElement.setAttribute('draggable', 'false');
+
+        // Добавляем обработчик contextmenu к каждому изображению
+        imgElement.addEventListener('contextmenu', function(event) {
+            event.preventDefault();
             return false;
-        });
-        
-        // Запрет контекстного меню для мобильных устройств (долгое нажатие)
-     //   document.addEventListener('touchstart', function(e) {
-            // Предотвращаем стандартное поведение для всех элементов кроме счетчика
-       //     if (e.target.id !== 'counter') {
-         //       e.preventDefault();
-           // }
-        //}, { passive: false });
-        
-      //  document.addEventListener('touchend', function(e) {
-            // Предотвращаем вызов контекстного меню при долгом тапе
-        //    if (e.target.id !== 'counter') {
-          //      e.preventDefault();
-            //}
-        //});
-        
-        // Запрет перетаскивания
-        document.addEventListener('dragstart', function(e) {
-            e.preventDefault();
-            return false;
-        });
+        }, { passive: false });
 
-        // Функция для получения параметров из URL
-        function getUrlParams() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const imagesParam = urlParams.get('images');
-            return imagesParam ? JSON.parse(imagesParam) : [];
-        }
-
-        // Элементы DOM
-        const container = document.getElementById('imageContainer');
-        const customScrollbar = document.getElementById('customScrollbar');
-        const counterElement = document.getElementById('counter');
-        
-        // Переменные
-        const imageLinks = getUrlParams();
-        let currentImageIndex = 0;
-        let scrollTimeout;
-        let isScrolling = false;
-
-        // Инициализация галереи
-        if (imageLinks.length > 0) {
-            // Загружаем изображения и ждем их загрузки
-            let loadedImages = 0;
-            
-            imageLinks.forEach((link, index) => {
-                const imgElement = new Image();
-                imgElement.src = link;
-                imgElement.alt = `Image ${index + 1} from Dropbox`;
-                imgElement.setAttribute('draggable', 'false');
-                
-                imgElement.onload = function() {
-                    loadedImages++;
-                    if (loadedImages === imageLinks.length) {
-                        // Все изображения загружены
-                        initScrollbar();
-                    }
-                };
-                
-                imgElement.onerror = function() {
-                    loadedImages++;
-                    if (loadedImages === imageLinks.length) {
-                        // Все изображения загружены (или некоторые с ошибкой)
-                        initScrollbar();
-                    }
-                };
-                
-                container.appendChild(imgElement);
-            });
-            
-            updateCounter();
-        } else {
-            container.innerHTML = '<p>Изображения не найдены.</p>';
-            counterElement.textContent = '0 / 0';
-        }
-
-        // Инициализация скроллбара после загрузки изображений
-        function initScrollbar() {
-            updateCustomScrollbar();
-            
-            // Обработчики событий
-            container.addEventListener('scroll', function() {
-                if (!isScrolling) {
-                    customScrollbar.classList.add('visible');
-                    isScrolling = true;
-                }
-                
-                updateCurrentImageIndex();
-                updateCustomScrollbar();
-                
-                // Скрываем скроллбар через 1 секунду после остановки прокрутки
-                clearTimeout(scrollTimeout);
-                scrollTimeout = setTimeout(() => {
-                    customScrollbar.classList.remove('visible');
-                    isScrolling = false;
-                }, 1000);
-            });
-            
-            // Также обновляем при изменении размера окна
-            window.addEventListener('resize', updateCustomScrollbar);
-            
-            // Принудительно показываем скроллбар на 2 секунды при загрузке, если есть прокрутка
-            if (container.scrollHeight > container.clientHeight) {
-                customScrollbar.classList.add('visible');
-                setTimeout(() => {
-                    if (!isScrolling) {
-                        customScrollbar.classList.remove('visible');
-                    }
-                }, 2000);
+        imgElement.onload = function() {
+            loadedImages++;
+            if (loadedImages === imageLinks.length) {
+                // Все изображения загружены
+                initScrollbar();
             }
-        }
+        };
 
-        // Обновление позиции и размера кастомного скроллбара
-        function updateCustomScrollbar() {
-            const scrollTop = container.scrollTop;
-            const scrollHeight = container.scrollHeight;
-            const clientHeight = container.clientHeight;
-            
-            // Проверяем, нужна ли вообще полоса прокрутки
-            if (scrollHeight <= clientHeight) {
-                customScrollbar.style.display = 'none';
-                return;
+        imgElement.onerror = function() {
+            loadedImages++;
+            if (loadedImages === imageLinks.length) {
+                // Все изображения загружены (или некоторые с ошибкой)
+                initScrollbar();
             }
-            
-            customScrollbar.style.display = 'block';
-            
-            // Вычисляем размер и позицию скроллбара
-            const scrollableHeight = scrollHeight - clientHeight;
-            const scrollPercent = scrollTop / scrollableHeight;
-            
-            // Высота скроллбара пропорциональна видимой области
-            const scrollbarHeight = Math.max((clientHeight / scrollHeight) * clientHeight, 40);
-            
-            // Позиция скроллбара
-            const scrollbarTop = scrollPercent * (clientHeight - scrollbarHeight);
-            
-            customScrollbar.style.height = scrollbarHeight + 'px';
-            customScrollbar.style.top = scrollbarTop + 'px';
+        };
+
+        container.appendChild(imgElement);
+    });
+
+    updateCounter();
+} else {
+    container.innerHTML = '<p>Изображения не найдены.</p>';
+    counterElement.textContent = '0 / 0';
+}
+
+// Инициализация скроллбара после загрузки изображений
+function initScrollbar() {
+    updateCustomScrollbar();
+
+    // Обработчики событий
+    container.addEventListener('scroll', function() {
+        if (!isScrolling) {
+            customScrollbar.classList.add('visible');
+            isScrolling = true;
         }
 
-        function updateCurrentImageIndex() {
-            const images = container.getElementsByTagName('img');
-            const containerRect = container.getBoundingClientRect();
-            const containerCenter = containerRect.top + containerRect.height / 2;
-            
-            let closestIndex = 0;
-            let minDistance = Number.MAX_VALUE;
-            
-            for (let i = 0; i < images.length; i++) {
-                const imgRect = images[i].getBoundingClientRect();
-                const imgCenter = imgRect.top + imgRect.height / 2;
-                const distance = Math.abs(imgCenter - containerCenter);
-                
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closestIndex = i;
-                }
+        updateCurrentImageIndex();
+        updateCustomScrollbar();
+
+        // Скрываем скроллбар через 1 секунду после остановки прокрутки
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            customScrollbar.classList.remove('visible');
+            isScrolling = false;
+        }, 1000);
+    });
+
+    // Также обновляем при изменении размера окна
+    window.addEventListener('resize', updateCustomScrollbar);
+
+    // Принудительно показываем скроллбар на 2 секунды при загрузке, если есть прокрутка
+    if (container.scrollHeight > container.clientHeight) {
+        customScrollbar.classList.add('visible');
+        setTimeout(() => {
+            if (!isScrolling) {
+                customScrollbar.classList.remove('visible');
             }
-            
-            currentImageIndex = closestIndex;
-            updateCounter();
-        }
+        }, 2000);
+    }
+}
 
-        function updateCounter() {
-            counterElement.textContent = `${currentImageIndex + 1} / ${imageLinks.length}`;
+// Обновление позиции и размера кастомного скроллбара
+function updateCustomScrollbar() {
+    const scrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
+
+    // Проверяем, нужна ли вообще полоса прокрутки
+    if (scrollHeight <= clientHeight) {
+        customScrollbar.style.display = 'none';
+        return;
+    }
+
+    customScrollbar.style.display = 'block';
+
+    // Вычисляем размер и позицию скроллбара
+    const scrollableHeight = scrollHeight - clientHeight;
+    const scrollPercent = scrollTop / scrollableHeight;
+
+    // Высота скроллбара пропорциональна видимой области
+    const scrollbarHeight = Math.max((clientHeight / scrollHeight) * clientHeight, 40);
+
+    // Позиция скроллбара
+    const scrollbarTop = scrollPercent * (clientHeight - scrollbarHeight);
+
+    customScrollbar.style.height = scrollbarHeight + 'px';
+    customScrollbar.style.top = scrollbarTop + 'px';
+}
+
+function updateCurrentImageIndex() {
+    const images = container.getElementsByTagName('img');
+    const containerRect = container.getBoundingClientRect();
+    const containerCenter = containerRect.top + containerRect.height / 2;
+
+    let closestIndex = 0;
+    let minDistance = Number.MAX_VALUE;
+
+    for (let i = 0; i < images.length; i++) {
+        const imgRect = images[i].getBoundingClientRect();
+        const imgCenter = imgRect.top + imgRect.height / 2;
+        const distance = Math.abs(imgCenter - containerCenter);
+
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestIndex = i;
         }
+    }
+
+    currentImageIndex = closestIndex;
+    updateCounter();
+}
+
+function updateCounter() {
+    counterElement.textContent = `${currentImageIndex + 1} / ${imageLinks.length}`;
+}
     </script>
 </body>
 </html>
+
 
 
