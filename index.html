@@ -14,19 +14,38 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            /* Запрет выделения текста и перетаскивания */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
         
         #imageContainer {
             width: 100%;
             flex-grow: 1;
             overflow-y: auto;
-            scrollbar-width: none; /* Скрываем полосу прокрутки в Firefox */
-            -ms-overflow-style: none; /* Скрываем полосу прокрутки в IE и Edge */
+            /* Тонкая прозрачная полоса прокрутки для Firefox */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
         }
 
-        /* Скрываем полосу прокрутки в WebKit-браузерах */
+        /* Стилизация полосы прокрутки для WebKit-браузеров */
         #imageContainer::-webkit-scrollbar {
-            display: none;
+            width: 6px; /* Уменьшенная ширина полосы прокрутки */
+        }
+
+        #imageContainer::-webkit-scrollbar-track {
+            background: transparent; /* Прозрачный фон дорожки */
+        }
+
+        #imageContainer::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.3); /* Полупрозрачный черный бегунок */
+            border-radius: 3px; /* Закругление углов */
+        }
+
+        #imageContainer::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(0, 0, 0, 0.5); /* Более темный при наведении */
         }
 
         img {
@@ -36,20 +55,26 @@
             display: block;
             margin: 0;
             padding: 0;
+            /* Запрет перетаскивания изображений */
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
         }
 
         #counter {
             position: fixed;
-            bottom: 20px; /* Отступ снизу */
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             padding: 8px 16px;
-            background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный черный фон */
+            background-color: rgba(0, 0, 0, 0.5);
             color: white;
-            border-radius: 20px; /* Закругленные края */
+            border-radius: 20px;
             font-size: 14px;
             z-index: 1000;
-            backdrop-filter: blur(5px); /* Эффект размытия фона */
+            backdrop-filter: blur(5px);
         }
     </style>
 </head>
@@ -60,6 +85,18 @@
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
+
+        // Запрет правого клика (контекстного меню)
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+
+        // Запрет перетаскивания
+        document.addEventListener('dragstart', function(e) {
+            e.preventDefault();
+            return false;
+        });
 
         // Функция для получения параметров из URL
         function getUrlParams() {
@@ -79,6 +116,10 @@
                 const imgElement = document.createElement('img');
                 imgElement.src = link;
                 imgElement.alt = `Image ${index + 1} from Dropbox`;
+                
+                // Дополнительная защита от перетаскивания для изображений
+                imgElement.setAttribute('draggable', 'false');
+                
                 container.appendChild(imgElement);
             });
             
