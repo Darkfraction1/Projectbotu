@@ -23,48 +23,25 @@
         #imageContainer {
             width: 100%;
             flex-grow: 1;
-            overflow-y: scroll;
-            /* Единый стиль для всех браузеров через WebKit (работает в Telegram WebView) */
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE и Edge */
+            overflow-y: auto;
+            /* Для Firefox */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
         }
 
-        /* Скрываем стандартную полосу прокрутки */
+        /* Стилизация полосы прокрутки для WebKit */
         #imageContainer::-webkit-scrollbar {
-            width: 0px;
+            width: 6px;
+        }
+        #imageContainer::-webkit-scrollbar-track {
             background: transparent;
         }
-
-        /* Создаем кастомную полосу прокрутки */
-        #imageContainer::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            right: 0;
-            height: 100vh;
-            width: 8px;
-            background: transparent;
-            pointer-events: none;
-            z-index: 1000;
+        #imageContainer::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
         }
-
-        /* Кастомный скроллбар */
-        #customScrollbar {
-            position: fixed;
-            top: 0;
-            right: 2px;
-            width: 4px;
-            height: 100px;
-            background-color: rgba(0, 0, 0, 0.4);
-            border-radius: 2px;
-            z-index: 1001;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        #imageContainer.scrolling #customScrollbar {
-            opacity: 1;
+        #imageContainer::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(0, 0, 0, 0.5);
         }
 
         img {
@@ -75,9 +52,6 @@
             margin: 0;
             padding: 0;
             -webkit-user-drag: none;
-            -khtml-user-drag: none;
-            -moz-user-drag: none;
-            -o-user-drag: none;
             user-drag: none;
         }
 
@@ -98,18 +72,19 @@
 </head>
 <body>
     <div id="imageContainer"></div>
-    <div id="customScrollbar"></div>
     <div id="counter">0 / 0</div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Запрет правого клика и перетаскивания
+        // Запрет правого клика (контекстного меню)
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
             return false;
         });
+
+        // Запрет перетаскивания
         document.addEventListener('dragstart', function(e) {
             e.preventDefault();
             return false;
@@ -122,17 +97,12 @@
             return imagesParam ? JSON.parse(imagesParam) : [];
         }
 
-        // Элементы DOM
-        const container = document.getElementById('imageContainer');
-        const customScrollbar = document.getElementById('customScrollbar');
-        const counterElement = document.getElementById('counter');
-        
-        // Переменные
+        // Загружаем и отображаем картинки
         const imageLinks = getUrlParams();
+        const container = document.getElementById('imageContainer');
+        const counterElement = document.getElementById('counter');
         let currentImageIndex = 0;
-        let scrollTimeout;
 
-        // Инициализация галереи
         if (imageLinks.length > 0) {
             imageLinks.forEach((link, index) => {
                 const imgElement = document.createElement('img');
@@ -143,45 +113,10 @@
             });
             
             updateCounter();
-            initCustomScrollbar();
-            
-            // Обработчики событий
-            container.addEventListener('scroll', function() {
-                updateCurrentImageIndex();
-                updateCustomScrollbar();
-                
-                // Показываем скроллбар при прокрутке
-                container.classList.add('scrolling');
-                clearTimeout(scrollTimeout);
-                scrollTimeout = setTimeout(() => {
-                    container.classList.remove('scrolling');
-                }, 1000);
-            });
+            container.addEventListener('scroll', updateCurrentImageIndex);
         } else {
             container.innerHTML = '<p>Изображения не найдены.</p>';
             counterElement.textContent = '0 / 0';
-        }
-
-        // Инициализация кастомного скроллбара
-        function initCustomScrollbar() {
-            updateCustomScrollbar();
-        }
-
-        // Обновление позиции кастомного скроллбара
-        function updateCustomScrollbar() {
-            const scrollTop = container.scrollTop;
-            const scrollHeight = container.scrollHeight;
-            const clientHeight = container.clientHeight;
-            const scrollableHeight = scrollHeight - clientHeight;
-            
-            if (scrollableHeight > 0) {
-                const scrollPercent = scrollTop / scrollableHeight;
-                const scrollbarHeight = Math.max((clientHeight / scrollHeight) * clientHeight, 40);
-                const scrollbarTop = scrollPercent * (clientHeight - scrollbarHeight);
-                
-                customScrollbar.style.height = scrollbarHeight + 'px';
-                customScrollbar.style.top = scrollbarTop + 'px';
-            }
         }
 
         function updateCurrentImageIndex() {
@@ -210,9 +145,6 @@
         function updateCounter() {
             counterElement.textContent = `${currentImageIndex + 1} / ${imageLinks.length}`;
         }
-
-        // Обновление скроллбара при изменении размера окна
-        window.addEventListener('resize', updateCustomScrollbar);
     </script>
 </body>
 </html>
