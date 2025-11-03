@@ -138,7 +138,7 @@ if (imageLinks.length > 0) {
     imageLinks.forEach((link, index) => {
         const imgElement = new Image();
         imgElement.src = link;
-        imgElement.alt = `Image ${index + 1} from Dropbox`;
+        imgElement.alt = `Image ${index + 1}`;
         imgElement.setAttribute('draggable', 'false');
 
         // Добавляем обработчик contextmenu к каждому изображению
@@ -265,3 +265,4 @@ function updateCounter() {
     </script>
 </body>
 </html>
+
