@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -5,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* ... (ваши существующие стили остаются без изменений) ... */
         * {
             box-sizing: border-box;
         }
@@ -235,23 +235,11 @@
                 return;
             }
 
-            try {
-                // Параллельная загрузка изображений с сохранением порядка
-                await loadImagesInParallelOrdered();
-                
-                // Проверяем, загрузились ли хоть какие-то изображения
-                const loadedImages = container.getElementsByTagName('img').length;
-                if (loadedImages === 0) {
-                    await loadBackupImage();
-                } else {
-                    // Все изображения загружены, показываем галерею
-                    showGallery();
-                }
-                
-            } catch (error) {
-                console.error('Ошибка загрузки изображений:', error);
-                await loadBackupImage();
-            }
+            // Начинаем загрузку изображений и сразу показываем галерею
+            loadImagesInParallelOrdered();
+            
+            // Показываем галерею сразу, не дожидаясь загрузки всех изображений
+            showGallery();
         }
 
         // Функция для загрузки резервного изображения
@@ -277,13 +265,9 @@
                     }, { passive: false });
 
                     container.appendChild(imgElement);
-                    
-                    showGallery();
                 }
             } catch (error) {
                 console.error('Ошибка загрузки резервного изображения:', error);
-                // Даже при ошибке показываем галерею
-                showGallery();
             }
         }
 
@@ -301,55 +285,63 @@
                     
                     const imgElement = new Image();
                     
-                    // Ожидаем загрузки изображения
-                    await new Promise((resolve, reject) => {
-                        imgElement.onload = resolve;
-                        imgElement.onerror = reject;
+                    // Создаем промис для загрузки изображения
+                    const loadPromise = new Promise((resolve, reject) => {
+                        imgElement.onload = () => {
+                            imgElement.alt = `Image ${index + 1}`;
+                            imgElement.setAttribute('draggable', 'false');
+
+                            imgElement.addEventListener('contextmenu', function(event) {
+                                event.preventDefault();
+                                return false;
+                            }, { passive: false });
+
+                            // Проверяем, загрузилось ли изображение успешно
+                            if (imgElement.complete && imgElement.naturalHeight !== 0) {
+                                resolve({ success: true, index, imgElement });
+                            } else {
+                                reject(new Error('Image failed to load'));
+                            }
+                        };
+                        
+                        imgElement.onerror = () => {
+                            reject(new Error('Image failed to load'));
+                        };
+                        
                         imgElement.src = blobUrl;
                     });
 
-                    imgElement.alt = `Image ${index + 1}`;
-                    imgElement.setAttribute('draggable', 'false');
-
-                    imgElement.addEventListener('contextmenu', function(event) {
-                        event.preventDefault();
-                        return false;
-                    }, { passive: false });
-
-                    // Проверяем, загрузилось ли изображение успешно
-                    if (imgElement.complete && imgElement.naturalHeight !== 0) {
-                        return { success: true, index, imgElement };
-                    } else {
-                        throw new Error('Image failed to load');
-                    }
+                    // Ожидаем загрузки изображения
+                    const result = await loadPromise;
+                    
+                    // Добавляем изображение в контейнер сразу после загрузки
+                    container.appendChild(result.imgElement);
+                    
+                    // Обновляем счетчик после добавления изображения
+                    updateCounter();
+                    
+                    return result;
                     
                 } catch (error) {
                     console.error(`Ошибка загрузки изображения ${index + 1}:`, error);
+                    // Продолжаем загрузку остальных изображений, не прерывая процесс
                     return { success: false, index, error };
                 }
             });
 
-            // Ожидаем завершения всех загрузок
-            const results = await Promise.allSettled(loadPromises);
-            
-            // Сортируем результаты по индексу и добавляем в DOM в правильном порядке
-            const sortedResults = results
-                .map((result, i) => result.status === 'fulfilled' ? result.value : {
-                    success: false,
-                    index: i,
-                    error: result.reason
-                })
-                .sort((a, b) => a.index - b.index);
-
-            // Добавляем изображения в DOM в правильном порядке
-            for (const result of sortedResults) {
-                if (result.success) {
-                    container.appendChild(result.imgElement);
+            // Запускаем все промисы, но не блокируем основной поток
+            Promise.allSettled(loadPromises).then(results => {
+                console.log('Все изображения обработаны');
+                
+                // Если ни одно изображение не загрузилось, загружаем резервное
+                const loadedImages = container.getElementsByTagName('img').length;
+                if (loadedImages === 0) {
+                    loadBackupImage();
                 }
-            }
+            });
         }
 
-        // Показать галерею после загрузки
+        // Показать галерею
         function showGallery() {
             // Скрываем экран загрузки
             loadingScreen.style.display = 'none';
